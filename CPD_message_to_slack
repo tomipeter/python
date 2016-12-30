@@ -1,0 +1,64 @@
+import selenium
+from selenium import webdriver
+import pandas as pd
+import datetime as dt
+from datetime import date, timedelta
+import time
+import glob
+import gzip
+import shutil
+import os
+from slacker import Slacker
+
+token = 'xoxb-121842286579-7x0YCiyYzaqGK2UdADH9585O'
+slack = Slacker(token)
+
+
+
+## Setting Driver Options
+#binary = 'C:/Program Files (x86)/Mozilla Firefox/firefox.exe'
+URL = "https://honeybadger.airgc.net/#/ubase/"
+srcFilePath = "C:/UBASE/Airbnb/Data/CPD/archive/NEW/"
+dstFilePath = 'C:/UBASE/Airbnb/Data/CPD/archive/RawData/NEW/'
+srcFileName = "agent_performance_history_t90d_"
+
+options = webdriver.ChromeOptions()
+prefs = {"download.default_directory" : srcFilePath}
+options.add_experimental_option("prefs",prefs)
+options.add_argument("--incognito")
+driver = webdriver.Chrome(chrome_options=options)
+
+# Login to web Server
+driver.get("https://honeybadger.airgc.net/WebInterface/login.html")
+username_input_element = driver.find_element_by_css_selector("#username")
+username_input_element.send_keys("bumil_lee")
+password_input_element = driver.find_element_by_css_selector("#password")
+password_input_element.send_keys("725382")
+login_button_element = driver.find_element_by_css_selector("#remember")
+login_button_element.click()
+login_button_element = driver.find_element_by_css_selector("#btnLogin")
+login_button_element.click()
+time.sleep(1)
+
+
+# set dates of files to download
+#start =  dt.date(2016, 2, 4)
+start = date.today() -timedelta(1)
+end = date.today() -timedelta(1)
+daterange = pd.date_range(start, end)
+dr = daterange.strftime("%Y%m%d")
+
+for single_date in dr:
+    files  = URL+srcFileName+ single_date+".csv.gz"
+    
+    if files == 'None':
+        print('File not uploaded yet')
+    else:
+        print(str(files)+' File uploaded')
+        slack.chat.post_message('#honeybadger_notice', str(files)+' File uploaded')
+        driver.get(files)
+
+
+time.sleep(20)
+
+driver.close()
