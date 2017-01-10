@@ -1,0 +1,115 @@
+import datetime
+import time
+import os
+import pyautogui
+from selenium import webdriver
+from selenium.webdriver import ActionChains
+from selenium.webdriver.common.keys import Keys
+
+os.system("taskkill /f /im iexplore.exe")
+os.system("taskkill /f /im excel.exe")
+
+#starttime = time.time()
+starttime = time.strftime('%Y-%m-%d_%H%M%S')
+
+print(starttime)
+    
+srcFilePath = "C:\\Users\\Gmarket_CS\\Documents\\EBAY\\CCA\\"
+
+browser = webdriver.Ie()
+browser.maximize_window()
+
+#Login
+browser.get('http://200.200.102.64/CtiManager/CtiManager.html')
+time.sleep(5)
+pyautogui.press('enter')
+
+pyautogui.click(x=200, y=200)
+time.sleep(5)
+pyautogui.press('tab')
+pyautogui.typewrite('U07000935')
+pyautogui.press('tab')
+pyautogui.typewrite('g1234')
+pyautogui.press('enter')
+time.sleep(5)           
+pyautogui.press('enter')
+time.sleep(2)    
+pyautogui.press('enter')
+
+#pyautogui.hotkey('alt','tab')
+pyautogui.click(x=500, y=500)
+pyautogui.hotkey('ctrl','n')
+
+time.sleep(5)
+
+browser.get('http://200.200.102.64/CtiManager/application/Chart.html')
+time.sleep(3)
+'''
+#Chart
+pyautogui.press(['tab','tab','tab','tab','space'])
+time.sleep(5)
+'''
+#menu
+pyautogui.click(x=300, y=300)
+time.sleep(2)
+pyautogui.press(['tab','right','right','down','space'])
+time.sleep(2)
+
+#change to time
+pyautogui.press(['tab','right','right','space'])
+time.sleep(5)
+
+#get back to menu
+pyautogui.click(x=600, y=700)
+pyautogui.press(['tab','tab','tab'])
+time.sleep(2)
+
+pyautogui.typewrite('0')
+pyautogui.press('tab')
+pyautogui.typewrite('23')
+pyautogui.press(['tab','tab','right','space'])
+time.sleep(2)
+#pyautogui.hotkey('alt','f4')
+time.sleep(2)
+pyautogui.hotkey('alt','tab')
+time.sleep(5)
+pyautogui.hotkey('ctrl','s')
+time.sleep(5)
+pyautogui.typewrite(srcFilePath +  "Inbound_IDC_" + str(starttime) )
+pyautogui.press(['enter'])
+
+time.sleep(2)
+os.system("taskkill /f /im iexplorr.exe")
+os.system("taskkill /f /im excel.exe")
+
+browser.close()
+
+
+
+
+'''
+
+browser.get('http://200.200.102.64/CtiManager/application/Chart.html')
+time.sleep(5)
+
+ActionChains(browser).move_by_offset(200, 200).click().send_keys(u'\ue004').send_keys(u'\ue014').send_keys(u'\ue014').send_keys(u'\ue015').send_keys(u'\ue007').perform()
+time.sleep(5)
+
+#시간변경
+ActionChains(browser).send_keys(u'\ue004').send_keys(u'\ue014').send_keys(u'\ue014').send_keys(u'\ue007').perform()
+time.sleep(5)
+
+#0-23
+ActionChains(browser).move_by_offset(200, 200).click().send_keys(u'\ue004').send_keys(u'\ue004').send_keys(u'\ue004').send_keys('0').send_keys(u'\ue004').send_keys('23').perform()
+time.sleep(5)
+
+ActionChains(browser).send_keys(u'\ue004').send_keys(u'\ue004').send_keys(u'\ue007').perform()
+time.sleep(5)
+
+ActionChains(browser).send_keys(u'\ue014').send_keys(u'\ue00d').perform()
+
+browser.save_screenshot(datetime.datetime.now().strftime('rds__%Y-%m-%d__%H.%M.png'))
+
+
+#browser.close()
+'''
