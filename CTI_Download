@@ -1,0 +1,193 @@
+import selenium
+from selenium import webdriver
+from selenium.common import exceptions
+import time
+import datetime as dt
+from datetime import date, timedelta
+import os
+import pyautogui
+import glob
+from slacker import Slacker
+import shutil
+import pandas as pd
+import re
+
+token = 'xoxb-122589762406-QdlxruRQtRx8AETbP7wP6gQz'
+slack = Slacker(token)
+
+slack.chat.post_message('#ebay_notice', "Start to Download EECA Data... ")
+
+#날짜 setting
+today = date.today()
+yesterday = date.today() - timedelta(1)
+
+## Setting Driver Optionss
+#binary = 'C:/Program Files (x86)/Mozilla Firefox/firefox.exe'
+URL = "https://ecca.ebaykorea.com/ics/stat/"
+BaseSrcFilePath = "C:/Users/Gmarket_CS/Documents/EBAY/ECCA/"
+
+
+#문의 유형별 메일 접수/처리
+getTypeMailProcStatExcel = "getTypeMailProcStatExcel"
+getTypeMailProcStatExcel2 = "getTypeMailProcStatExcel2"
+#일자별 메일 접수/처리
+getDailyMailProcStatExcel = "getDailyMailProcStatExcel"
+getDailyMailProcStatExcel2 = "getDailyMailProcStatExcel2"
+
+
+folders = [getTypeMailProcStatExcel,getTypeMailProcStatExcel2]
+folders2 = [getDailyMailProcStatExcel,getDailyMailProcStatExcel2]
+
+#Setting URLs
+typemail = URL + getTypeMailProcStatExcel
+typemail2 = URL + getTypeMailProcStatExcel2
+dailymail = URL + getDailyMailProcStatExcel
+dailymail2 = URL + getDailyMailProcStatExcel2
+
+# 엑셀 다운로드 URL
+tail = "&recvClass=&mailChannel=&recvChannel=&recvChannelTypeAuc=M\
+&recvChannelTypeAuc=N&recvChannelTypeAuc=X&recvChannelTypeAuc=Y&recvChannelTypeAuc=Z&recvChannelTypeAuc=CC\
+&recvChannelTypeAuc=DC&recvChannelTypeAuc=POP3&recvChannelTypeAuc=SC&recvChannelTypeAuc=MC&recvChannelTypeAuc=IQ\
+&brandCd=AUC&procType=&groupCd=&mailStatus=&partCd=&agentStatus=&agentId=&mailOnOff=&_search=false&nd=1486003971917&rows=50&page=1&sidx=&sord=asc"
+
+#give options to Chrome : set download file path, set automatic downloads
+#크롬 다운로드 파일 위치 설정 
+options = webdriver.ChromeOptions()
+prefs = {"download.default_directory" : BaseSrcFilePath,'profile.default_content_setting_values.automatic_downloads': 1,'multiple-automatic-downloads' : 1}
+
+options.add_experimental_option("prefs",prefs)
+options.add_argument("--incognito")
+driver = webdriver.Chrome(chrome_options=options)
+
+# set download files' urls and DATEs
+time.sleep(1)
+get_typemail  = (typemail+"?excelBrandCd=AUC&fromDate=\
+"+str(yesterday)+"&toDate="+str(yesterday)+tail)
+get_typemail2  = (typemail2+"?excelBrandCd=AUC&fromDate=\
+"+str(yesterday)+"&toDate="+str(yesterday)+tail)
+get_dailymail  = (dailymail+"?excelBrandCd=AUC&fromDate=\
+"+str(yesterday)+"&toDate="+str(yesterday)+tail)
+get_dailymail2  = (dailymail2+"?excelBrandCd=AUC&fromDate=\
+"+str(yesterday)+"&toDate="+str(yesterday)+tail)
+
+# Login to web Server
+def login():
+    driver.get("https://ecca.ebaykorea.com/ics/login.jsp")
+    username_input_element = driver.find_element_by_css_selector("#j_username")
+    username_input_element.send_keys("U11010667")
+    password_input_element = driver.find_element_by_css_selector("#j_password")
+    password_input_element.send_keys("!Q@W#E$R%T")
+    time.sleep(2)
+    pyautogui.press('enter')
+    slack.chat.post_message('#ebay_notice', 'Login Success!')
+
+
+def download_files():
+    pyautogui.press('enter')
+    time.sleep(2)
+
+    driver.get(get_typemail)
+    driver.get(get_typemail2)
+    driver.get(get_dailymail)
+    driver.get(get_dailymail2)
+
+    slack.chat.post_message('#ebay_notice', 'File Download Success!')
+
+#remove duplicates from the file (if file name includes (1),(2),(3)... being removed
+def remove_duplicates():
+    for file in glob.glob(os.path.join(BaseSrcFilePath, "*([0-9]).csv")):
+        print('file ' + file + ' removed')
+        
+        os.remove(file)
+    slack.chat.post_message('#ebay_notice', ' Dupulicated file  removed...')
+
+def move_files():
+    files = os.listdir(os.path.join(BaseSrcFilePath))
+    files_xls = [f for f in files if f[-3:] == 'csv']
+    srcFilePath = ""
+    
+    for item in files_xls:
+        if item.find("일자별") != -1:
+            if item.find("접수일기준") != -1:
+                srcFilePath = BaseSrcFilePath  +  "/" + getDailyMailProcStatExcel2
+            else:
+                srcFilePath = BaseSrcFilePath  +  "/" + getDailyMailProcStatExcel
+        elif item.find("문의유형별") != -1:
+            if item.find("접수기준") != -1:
+                srcFilePath = BaseSrcFilePath  +  "/" + getTypeMailProcStatExcel2
+            else:
+                srcFilePath = BaseSrcFilePath  +  "/" + getTypeMailProcStatExcel
+
+        try:
+            shutil.move(BaseSrcFilePath + "/"+ item, srcFilePath)
+        except OSError:
+            
+            pass
+
+    slack.chat.post_message('#ebay_notice', 'File Moved to Source Folders!')         
+
+
+def browser_close():
+    time.sleep(30)
+    driver.close()
+    os.system("taskkill /f /im chrome.exe")
+    os.system("taskkill /f /im excel.exe")
+    os.system("taskkill /f /im chromedriver.exe")
+
+    slack.chat.post_message('#ebay_notice', 'Closing Web Browser...@' + time.strftime('%Y-%m-%d %H:%M:%S'))
+
+
+
+    
+def merge_files():
+      
+       
+    all_data = pd.DataFrame() #initializes DF which will hold aggregated csv files
+
+    #UTF-8 한글인코딩 문제로 인해 loop두개 생성
+    for folder in folders:
+        SrcPath = BaseSrcFilePath + folder
+        FilePath = glob.glob(SrcPath + "/" + "*.csv")
+        for csv_file in FilePath: 
+            
+            df = pd.read_csv(csv_file,encoding = "utf-8")
+            name= os.path.basename(csv_file).split('-(')[1].split(').')[0][:10]
+            df['date'] = name
+            all_data = all_data.append(df,ignore_index=True) #appends current csv to final DF
+            #print(csv_file)
+
+        all_data.to_csv(SrcPath + "_merge.csv", index=None)
+
+    #EUC-KR 한글인코딩 문제로 인해 loop두개 생성
+    for folder in folders2:
+        SrcPath = BaseSrcFilePath + folder
+        FilePath = glob.glob(SrcPath + "/" + "*.csv")
+        for csv_file in FilePath: 
+            
+            df = pd.read_csv(csv_file,encoding = "euc-kr")
+            
+            df['date'] = re.findall('\d{4}-\d{2}-\d{2}',os.path.basename(csv_file))
+            all_data = all_data.append(df,ignore_index=True) #appends current csv to final DF
+            #print(csv_file)
+            #print(df['filename'])
+        all_data.to_csv(SrcPath + "_merge.csv", index=None)
+
+    
+    slack.chat.post_message('#ebay_notice',"Mergng Files...")
+
+if __name__ == "__main__":
+    
+    login()
+    time.sleep(2)
+    download_files()
+    time.sleep(2)
+    browser_close()
+    remove_duplicates()
+    move_files()
+    merge_files()
+
+    
+    print("End Time "+ time.strftime('%Y-%m-%d %H:%M:%S'))
+    slack.chat.post_message('#ebay_notice',"End Time "+ time.strftime('%Y-%m-%d %H:%M:%S'))
+    
+   
