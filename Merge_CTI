@@ -12,7 +12,7 @@ import shutil
 import pandas as pd
 import re
 
-token = 'xoxb-122589762406-QdlxruRQtRx8AETbP7wP6gQz'
+
 slack = Slacker(token)
 
 slack.chat.post_message('#ebay_notice', "Start to Download EECA Data... ")
