@@ -10,8 +10,6 @@ import shutil
 import os
 from slacker import Slacker
 
-token = 'xoxb-121842286579-7x0YCiyYzaqGK2UdADH9585O'
-slack = Slacker(token)
 
 
 
