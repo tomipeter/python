@@ -1,0 +1,19 @@
+import psycopg2 as pg2
+try:
+    conn=pg2.connect(database="airbnb",user="postgres",password="airbnb",host="localhost",port="5432")
+    
+    conn.autocommit = True  
+    cur = conn.cursor()
+    
+    # database 만들기
+    cur.execute('create database testdb')  # superuser 만 create database  명령어 가능..
+    cur.execute('SELECT version()')
+    ver = cur.fetchone()
+except Exception as e: 
+    print ('postgresql database connection error!')
+    print (e)
+else:
+    print (ver)
+finally:
+    if conn:
+        conn.close()
