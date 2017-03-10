@@ -1,0 +1,31 @@
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+import pymongo
+import json
+ 
+# use creds to create a client to interact with the Google Drive API
+scope = ['https://spreadsheets.google.com/feeds']
+creds = ServiceAccountCredentials.from_json_keyfile_name('PATH\TO\KEY.json', scope)
+client = gspread.authorize(creds)
+ 
+# Find a workbook by name and open the first sheet
+# Make sure you use the right name here.
+sheet = client.open("")
+worksheet = sheet.get_worksheet(0)
+
+
+# Extract and print all of the values
+list_of_hashes = worksheet.get_all_records()
+
+list_of_lists = worksheet.get_all_values()
+
+df = pd.DataFrame(list_of_lists)
+        
+mng_client = pymongo.MongoClient('localhost', 27017)
+mng_db = mng_client['DB']
+collection_name = 'COLLECTION'
+db_cm = mng_db[collection_name]
+    
+data_json = json.loads(df.to_json(orient='records'))
+db_cm.remove()
+db_cm.insert_many(data_json)
